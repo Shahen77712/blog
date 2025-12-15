@@ -1,31 +1,276 @@
 <!DOCTYPE html>
-<html>
-    <head>
-<title>My first name</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    </head>
-    <body>
-        <header>
-            <div class="logo">
+<html lang="hy">
+<head>
+    <meta charset="UTF-8">
+    <title>Քննարկման կայք</title>
 
-            </div>
-<nav>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #eef2f3;
+            padding: 20px;
+        }
+        .container {
+            max-width: 700px;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px gray;
+        }
+        input, button, textarea {
+            width: 100%;
+            padding: 10px;
+            margin-top: 10px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            cursor: pointer;
+            border: none;
+        }
+        button:hover {
+            background: #005fcc;
+        }
+        .topic, .comment {
+            background: #f2f2f2;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+        .comment {
+            background: #e9e9e9;
+        }
+        #logoutBtn {
+            background: red;
+        }
+    </style>
+</head>
+<body>
 
-    <ul>
-        <li><a href="index.html">HOME</a><li>
-          <li><a href="about.html">About us<a></a></li>
-          <li><a href="Contact.html">Contact us<a></a></li>
-    </ul>
-</nav>
-        </header>
-        <main>
+<div class="container">
 
-        </main>
-        <footer>
-     <ul>
-        <li><a href="mailto:blog@blog.blog">blog@blog.blog</a></li>
-        <li><a href="tel: +37494775588"> +37494775588</a></li>
-     </ul>
-        </footer>
-    </body>
+    <h2 style="text-align:center">Քննարկման կեցություն</h2>
+
+    <!-- ՄԻՆՉԵՎ ՄՈՒՏՔ՝ ԳՐԱՆՑՈՒՄ/ՄՈՒՏՔԻ ՄԱՍ -->
+    <div id="authSection">
+
+        <h3>Գրանցում</h3>
+        <input type="text" id="regUser" placeholder="Օգտանուն">
+        <input type="password" id="regPass" placeholder="Գաղտնաբառ">
+        <button onclick="register()">Գրանցվել</button>
+
+        <hr>
+
+        <h3>Մուտք</h3>
+        <input type="text" id="loginUser" placeholder="Օգտանուն">
+        <input type="password" id="loginPass" placeholder="Գաղտնաբառ">
+        <button onclick="login()">Մուտք գործել</button>
+
+    </div>
+
+    <!-- ՀԵՏՈ՝ ՔՆՆԱՐԿՄԱՆ ՄԱՍ -->
+    <div id="discussionSection" style="display:none;">
+
+        <h3>Բարի գալուստ, <span id="usernameLabel"></span>!</h3>
+        <button id="logoutBtn" onclick="logout()">Դուրս գալ</button>
+
+        <h3>Ավելացնել քննարկման թեմա</h3>
+        <input type="text" id="topicTitle" placeholder="Քննարկման թեմա">
+        <button onclick="addTopic()">Ավելացնել</button>
+
+        <h3>Քննարկումներ</h3>
+        <div id="topicsList"></div>
+
+    </div>
+
+</div>
+
+
+<script>
+// ---------------------
+// Գրանցում
+// ---------------------
+function register() {
+    let u = document.getElementById("regUser").value;
+    let p = document.getElementById("regPass").value;
+
+    if (!u || !p) {
+        alert("Խնդրում եմ լրացնել բոլոր դաշտերը:");
+        return;
+    }
+
+    if (localStorage.getItem("user_" + u)) {
+        alert("Այս օգտանունը արդեն գրանցված է:");
+        return;
+    }
+
+    localStorage.setItem("user_" + u, p);
+    alert("Գրանցումը հաջող ավարտվեց։ Այժմ կարող եք մուտք գործել։");
+}
+
+
+
+// ---------------------
+// Մուտք
+// ---------------------
+function login() {
+    let u = document.getElementById("loginUser").value;
+    let p = document.getElementById("loginPass").value;
+
+    let savedPass = localStorage.getItem("user_" + u);
+
+    if (savedPass === p) {
+        localStorage.setItem("loggedUser", u);
+        showDiscussion();
+    } else {
+        alert("Սխալ օգտանուն կամ գաղտնաբառ։");
+    }
+}
+
+
+
+// ---------------------
+// Դուրս գալ
+// ---------------------
+function logout() {
+    localStorage.removeItem("loggedUser");
+    location.reload();
+}
+
+
+
+// ---------------------
+// Քննարկման հատված
+// ---------------------
+function showDiscussion() {
+    document.getElementById("authSection").style.display = "none";
+    document.getElementById("discussionSection").style.display = "block";
+
+    document.getElementById("usernameLabel").innerText =
+        localStorage.getItem("loggedUser");
+
+    loadTopics();
+}
+
+
+
+// ---------------------
+// Ավելացնել թեմա
+// ---------------------
+function addTopic() {
+    let title = document.getElementById("topicTitle").value;
+    let user = localStorage.getItem("loggedUser");
+
+    if (!title) {
+        alert("Թեման դատարկ է։");
+        return;
+    }
+
+    let topics = JSON.parse(localStorage.getItem("topics") || "[]");
+
+    topics.push({
+        id: Date.now(),
+        title: title,
+        user: user,
+        comments: []
+    });
+
+    localStorage.setItem("topics", JSON.stringify(topics));
+
+    document.getElementById("topicTitle").value = "";
+    loadTopics();
+}
+
+
+
+// ---------------------
+// Բեռնել բոլոր թեմաները
+// ---------------------
+function loadTopics() {
+    let container = document.getElementById("topicsList");
+    container.innerHTML = "";
+
+    let topics = JSON.parse(localStorage.getItem("topics") || "[]");
+
+    topics.forEach(topic => {
+        let div = document.createElement("div");
+        div.className = "topic";
+        div.innerHTML = `
+            <b>${topic.title}</b><br>
+            <i>Օգտատեր՝ ${topic.user}</i><br><br>
+
+            <textarea id="comment_${topic.id}" placeholder="Մեկնաբանություն"></textarea>
+            <button onclick="addComment(${topic.id})">Ավելացնել մեկնաբանություն</button>
+
+            <div id="comments_${topic.id}"></div>
+        `;
+        container.appendChild(div);
+
+        loadComments(topic.id);
+    });
+}
+
+
+
+// ---------------------
+// Ավելացնել մեկնաբանություն
+// ---------------------
+function addComment(topicId) {
+    let text = document.getElementById("comment_" + topicId).value;
+    let user = localStorage.getItem("loggedUser");
+
+    if (!text) return;
+
+    let topics = JSON.parse(localStorage.getItem("topics") || "[]");
+
+    topics.forEach(t => {
+        if (t.id === topicId) {
+            t.comments.push({
+                user: user,
+                text: text
+            });
+        }
+    });
+
+    localStorage.setItem("topics", JSON.stringify(topics));
+    loadComments(topicId);
+
+    document.getElementById("comment_" + topicId).value = "";
+}
+
+
+
+// ---------------------
+// Մեկնաբանությունների ցուցադրում
+// ---------------------
+function loadComments(topicId) {
+    let topics = JSON.parse(localStorage.getItem("topics") || "[]");
+    let topic = topics.find(t => t.id === topicId);
+
+    let box = document.getElementById("comments_" + topicId);
+    box.innerHTML = "";
+
+    topic.comments.forEach(c => {
+        let div = document.createElement("div");
+        div.className = "comment";
+        div.innerHTML = `<b>${c.user}</b>: ${c.text}`;
+        box.appendChild(div);
+    });
+}
+
+
+
+// ---------------------
+// Բայական ստուգում՝ արդյոք մուտք կա
+// ---------------------
+if (localStorage.getItem("loggedUser")) {
+    showDiscussion();
+}
+
+</script>
+
+</body>
 </html>
